@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOllama } from "@langchain/ollama";
 import { createAgent } from "langchain";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
 import { searchKnowledgeBase } from "./tools.js";
@@ -8,8 +8,8 @@ const checkpointer = new MemorySaver();
 
 export async function runAgent({ sessionId = "default", message }) {
   try {
-    const model = new ChatOpenAI({
-      model: "gpt-4o",
+    const model = new ChatOllama({
+      model: "llama3.2:1b",
       temperature: 0,
     });
 
@@ -18,8 +18,13 @@ export async function runAgent({ sessionId = "default", message }) {
       tools: [searchKnowledgeBase],
       checkpointer,
       systemPrompt:
-        `You are a helpful AI assistant with access to a knowledge base. When users ask questions,
-         search the knowledge base using the available tools to find relevant information. Be concise and accurate.`,
+        `You are an AI assistant that answers ONLY using information found in the knowledge base via the search_knowledge_base tool.
+
+Rules:
+- You MUST always call search_knowledge_base before answering any question.
+- If the tool returns no relevant information or empty results, respond exactly: "Je n'ai trouvé aucune information à ce sujet dans la base de connaissances."
+- Never use your own general knowledge to answer. Only use what the tool returns.
+- Do not add information that is not explicitly present in the search results.`,
     });
 
     console.log(`🤖 Running agent for: "${message}"`);
